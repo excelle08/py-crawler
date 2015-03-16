@@ -27,8 +27,10 @@ base_url = ''
 # Set if display verbose log.
 debug_mode = True
 # Set whether to allow the program to open another main process to crawl external website
+# If
 # NOTE: This will probably consume a large amount of system resource.
 #       As a consequence, considerable lagging or even crash may happen.
+#       So it is NOT recommended to set to True when running on ordinary PCs or VPS.
 recursive_crawl = False
 # Size of the process pool
 pool_size = 32
