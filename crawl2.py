@@ -18,7 +18,7 @@ url_list = Queue()
 base_url = ''
 base_dir = ''
 debug_mode = True
-p = Pool(processes=32)
+
 
 def addFileName(url):
     list = re.split('/', url)
@@ -105,6 +105,10 @@ def worker_once():
         if os.path.exists('./' + base_dir + addFileName(parts.path)):
             return
 
+        if parts.netloc != base_dir:
+            os.system('nohup python ' + sys.argv[0] + ' http://' + parts.netloc + ' > log'
+            + str(time.time()) + '.txt' + ' &')
+            return
 
         reqobj = urllib2.Request(url)
         reqobj.add_header('Host', parts.netloc)
@@ -127,46 +131,25 @@ def worker_once():
             fp.write(data)
         log('Write file into: %s' % parts.path)
     except Exception, ex:
-        log('[EXCEPTION] ' + ex.message)
+        log(ex.message)
         exception(ex)
 
 if __name__ == '__main__':
     pars = sys.argv
     if pars.__len__() > 1:
-        try:
-            base_url = pars[1]
-            url_list.put(base_url)
-            base_dir = urlparse(base_url).netloc
-            log('Dedicated website: %s' % base_url)
-            log('Launched parent process: %s' % os.getpid())
-            log('Doing the first iteration...')
-            worker()
-            for i in range(32):
-                p.apply_async(worker, args=())
-            print('Doing all processes...')
-            p.close()
-            p.join()
-            log('All process done.')
-        except BaseException, ex:
-            exception(ex)
-        finally:
-            if not url_list.empty():
-                with open('status.last', 'w') as f:
-                    while not url_list.empty():
-                        f.writelines(url_list.get())
-                with open('baseurl.last', 'w') as f:
-                    f.write(base_url)
+        base_url = pars[1]
+        url_list.put(base_url)
+        base_dir = urlparse(base_url).netloc
+        log('Dedicated website: %s' % base_url)
+        log('Launched parent process: %s' % os.getpid())
+        log('Doing the first iteration...')
+        worker()
+        p = Pool()
+        for i in range(4):
+            p.apply_async(worker, args=())
+        print('Doing all processes...')
+        p.close()
+        p.join()
+        log('All process done.')
     else:
-        if os.path.exists('./status.last'):
-            with open('./status.last', 'r') as fp:
-                while True:
-                    u = fp.readline()
-                    if not u:
-                        break
-                    url_list.put(u)
-            with open('./baseurl.last', 'r') as fp:
-                base_url = fp.readline()
-            worker()
-            for i in range(32):
-                p.apply_async(worker, args=())
         print('An argument about the website URL required.')
