@@ -33,9 +33,7 @@ debug_mode = True
 #       So it is NOT recommended to set to True when running on ordinary PCs or VPS.
 recursive_crawl = False
 # Size of the process pool
-pool_size = 32
-
-p = Pool(processes=pool_size)
+pool_size = 4
 
 '''
     In common URL parameters in HTML tags are like these:
@@ -79,7 +77,8 @@ def procSrc(src):
     :return: Nothing
     '''
     p = urlparse(src)
-    if (p.netloc == base_url) or (not p.netloc):
+    base_site = urlparse(base_url).netloc
+    if (p.netloc == base_site) or (not p.netloc):
         if not os.path.exists('./' + p.netloc + addFileName(p.path)):
             url_list.put(src)
             log('Put %s into queue.' % src)
@@ -193,6 +192,8 @@ if __name__ == '__main__':
             log('Launched parent process: %s' % os.getpid())
             log('Doing the first iteration...')
             worker()
+
+            p = Pool(processes=pool_size)
             for i in range(pool_size):
                 p.apply_async(worker, args=())
             print('Doing all processes...')
